@@ -1,46 +1,12 @@
-import argparse
 import sys
 from os import chdir
 from os.path import relpath
 
-import argcomplete
+from ..configuration import configure
+from .base import Launcher, RequireSubCommand
 
-from .configuration import configure
-
-
-DEFAULT_CONFIG_FILE = 'easyq.yml'
+DEFAULT_CONFIG_FILE = '%s.yml' % sys.argv[0]
 DEFAULT_ADDRESS = '1085'
-
-
-class Launcher:
-    no_launch = False
-    parser = None
-
-    @classmethod
-    def create_parser(cls, subparsers):
-        raise NotImplementedError
-
-    @classmethod
-    def register(cls, subparsers):
-        parser = cls.create_parser(subparsers)
-        instance = cls()
-        instance.parser = parser
-        if not cls.no_launch:
-            parser.set_defaults(func=instance)
-        return instance
-
-    def __call__(self, *args):
-        self.args = args[0] if len(args) else None
-        sys.exit(self.launch())
-
-    def launch(self):
-        if self.parser:
-            self.parser.print_help()
-        return 1
-
-
-class RequireSubCommand:
-    no_launch = True
 
 
 class RunServerLauncher(Launcher):
@@ -103,35 +69,4 @@ class ServerLauncher(Launcher, RequireSubCommand):
         RunServerLauncher.register(server_subparsers)
         return parser
 
-
-class MainLauncher(Launcher):
-
-    def __init__(self):
-        self.parser = parser = argparse.ArgumentParser(
-            prog=sys.argv[0],
-            description='easyq command line interface.'
-        )
-        subparsers = parser.add_subparsers(
-            title="sub commands",
-            prog=sys.argv[0],
-            dest="command"
-        )
-
-        ServerLauncher.register(subparsers)
-        argcomplete.autocomplete(parser)
-
-    def launch(self, args=None):
-        cli_args = self.parser.parse_args(args)
-        if hasattr(cli_args, 'func'):
-            cli_args.func(cli_args)
-        else:
-            self.parser.print_help()
-        sys.exit(0)
-
-    @classmethod
-    def create_parser(cls, subparsers):
-        """
-        Do nothing here
-        """
-        pass
 
