@@ -6,7 +6,7 @@ import argcomplete
 
 from .base import Launcher
 from .server import ServerLauncher
-from .argcompletion import ArgCompleteInstaller
+from .argcompletion import AutoCompletionLauncher
 
 
 class MainLauncher(Launcher):
@@ -24,7 +24,7 @@ class MainLauncher(Launcher):
         )
 
         ServerLauncher.register(subparsers)
-        ArgCompleteInstaller.register(subparsers)
+        AutoCompletionLauncher.register(subparsers)
         argcomplete.autocomplete(parser)
 
     def launch(self, args=None):
