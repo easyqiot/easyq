@@ -1,26 +1,30 @@
 import argparse
 import sys
+from os.path import basename
 
 import argcomplete
 
 from .base import Launcher
 from .server import ServerLauncher
+from .argcompletion import ArgCompleteInstaller
 
 
 class MainLauncher(Launcher):
 
     def __init__(self):
+        prog = basename(sys.argv[0])
         self.parser = parser = argparse.ArgumentParser(
-            prog=sys.argv[0],
+            prog=prog,
             description='easyq command line interface.'
         )
         subparsers = parser.add_subparsers(
             title="sub commands",
-            prog=sys.argv[0],
+            prog=prog,
             dest="command"
         )
 
         ServerLauncher.register(subparsers)
+        ArgCompleteInstaller.register(subparsers)
         argcomplete.autocomplete(parser)
 
     def launch(self, args=None):
