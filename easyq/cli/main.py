@@ -1,5 +1,5 @@
-import argparse
 import sys
+import argparse
 from os.path import basename
 
 import argcomplete
@@ -35,7 +35,7 @@ class MainLauncher(Launcher):
         argcomplete.autocomplete(parser)
 
     def launch(self, args=None):
-        cli_args = self.parser.parse_args(args)
+        cli_args = self.parser.parse_args(args or sys.argv[1:])
         if cli_args.version:
             print(easyq.__version__)
             return 0
