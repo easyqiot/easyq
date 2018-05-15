@@ -4,6 +4,7 @@ from os.path import basename
 
 import argcomplete
 
+import easyq
 from .base import Launcher
 from .server import ServerLauncher
 from .argcompletion import AutoCompletionLauncher
@@ -17,6 +18,12 @@ class MainLauncher(Launcher):
             prog=prog,
             description='easyq command line interface.'
         )
+        parser.add_argument(
+            '-V', '--version',
+            default=False,
+            action='store_true',
+            help='Show the version.'
+        )
         subparsers = parser.add_subparsers(
             title="sub commands",
             prog=prog,
@@ -29,6 +36,10 @@ class MainLauncher(Launcher):
 
     def launch(self, args=None):
         cli_args = self.parser.parse_args(args)
+        if cli_args.version:
+            print(easyq.__version__)
+            return 0
+
         if hasattr(cli_args, 'func'):
             cli_args.func(cli_args)
         else:

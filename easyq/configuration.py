@@ -4,12 +4,13 @@ import pymlconf
 settings = pymlconf.DeferredConfigManager()
 
 
-BUILTIN_CONFIGURATION = """
-server:
-  host: localhost
-  port: 1085
+DEFAULT_ADDRESS = 'localhost:1085'
 
-"""
+BUILTIN_CONFIGURATION = f'''
+server:
+  bind: {DEFAULT_ADDRESS}
+
+'''
 
 
 def configure(*args, **kwargs):
