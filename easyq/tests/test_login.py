@@ -6,7 +6,9 @@ from easyq.tests.helpers import EasyQTestServer, TestCase
 
 class LoginTestCase(TestCase):
     async def test_trust(self):
-        await asyncio.sleep(1)
+        async with self.server() as bind:
+            print(bind)
+            await asyncio.sleep(1)
 
         #async with EasyQTestServer
 
