@@ -10,8 +10,9 @@ class Connection:
         self.reader = reader
         self.writer = writer
 
-    def send(self, data):
+    async def send(self, data):
         self.writer.write(b'%s\n' % data)
+        await self.writer.drain()
 
     async def receive(self):
         while True:
@@ -25,6 +26,7 @@ class Connection:
 
     def close(self):
         self.writer.write_eof()
+        self.writer.close()
 
 
 class ClientConnection(Connection):
@@ -32,33 +34,35 @@ class ClientConnection(Connection):
 
 
 class ServerConnection(Connection):
+
     async def login(self):
         login = await self.receive()
         session_id = await authenticate(login)
         if session_id is None:
-            self.send(str(ex).encode())
+            await self.send(b'Authentication failed')
             return None
 
         self.session_id = session_id
-        self.send(session_id)
+        await self.send(session_id)
         return session_id
 
 
-async def server_handler(reader, writer):
-    session = ServerConnection(reader, writer)
+    @classmethod
+    async def handler(cls, reader, writer):
+        session = cls(reader, writer)
 
-    try:
-        # Authentication
-        if await session.login() is None:
-            return
+        try:
+            # Authentication
+            if await session.login() is None:
+                return
 
-        # Reading commands
-        while True:
-            chunk = await session.receive()
-            session.send(chunk)
+            # Reading commands
+            while True:
+                chunk = await session.receive()
+                await session.send(chunk)
 
-    except asyncio.IncompleteReadError:
-        print('Connection closed by the peer')
-    finally:
-        session.close()
+        except asyncio.IncompleteReadError:
+            print('Connection closed by the peer')
+        finally:
+            session.close()
 

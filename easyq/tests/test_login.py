@@ -13,7 +13,7 @@ class LoginTestCase(TestCase):
         '''
         async with self.server(options) as connect:
             connection = await connect()
-            connection.send(b'LOGIN test')
+            await connection.send(b'LOGIN test')
             session_id = await connection.receive()
             self.assertEqual(b'test', session_id)
 

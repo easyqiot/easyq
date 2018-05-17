@@ -1,7 +1,7 @@
 import asyncio
 
 from .configuration import settings, configure
-from .protocols import server_handler, Connection, ServerConnection, ClientConnection
+from .protocols import Connection, ServerConnection, ClientConnection
 from .authentication import initialize
 
 
@@ -23,5 +23,5 @@ def create_server(bind=None, loop=None):
     authentication.initialize()
 
     # Create the server coroutine
-    return asyncio.start_server(server_handler, host, port, loop=loop)
+    return asyncio.start_server(ServerConnection.handler, host, port, loop=loop)
 

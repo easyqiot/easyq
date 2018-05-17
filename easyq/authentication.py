@@ -31,5 +31,5 @@ async def authenticate(credentials):
     parts = credentials.split(b' ')
     if parts[0].lower() != b'login':
         return None
-    return await authenticator.authenticate(*parts[1:])
+    return await authenticator.authenticate(b' '.join(parts[1:]))
 
