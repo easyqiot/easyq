@@ -2,7 +2,7 @@ import asyncio
 
 from aiounittest import AsyncTestCase
 
-from easyq.protocol import EasyQProtocol
+from easyq.protocols import EasyQProtocol
 
 
 class TestCase(AsyncTestCase):
@@ -20,7 +20,11 @@ class EasyQTestServer:
     async def __aenter__(self):
         self.server = await self.loop.create_server(EasyQProtocol, port=0)
         host, port = self.server.sockets[0].getsockname()
-        return host, port
+        async def connector():
+            reader, writer = yield from asyncio.open_connection(host, port, loop=loop)
+
+            writer.close()
+        return connector
 
     async def __aexit__(self, exc_type, exc, tb):
         self.server.close()

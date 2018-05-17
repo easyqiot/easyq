@@ -1,21 +1,21 @@
-import sys
 import asyncio
+import sys
 from os import chdir
 from os.path import relpath
 
-from ..configuration import configure, DEFAULT_ADDRESS, settings
-from ..protocol import EasyQProtocol
+import easyq
+from ..configuration import configure, DEFAULT_ADDRESS
 from .base import Launcher, RequireSubCommand
 
 
 DEFAULT_CONFIG_FILE = '%s.yml' % sys.argv[0]
 
 
-class RunServerLauncher(Launcher):
+class StartServerLauncher(Launcher):
 
     @classmethod
     def create_parser(cls, subparsers):
-        parser = subparsers.add_parser('run', help='Starts a server on given host and port')
+        parser = subparsers.add_parser('strat', help='Starts a server on given host and port')
         parser.add_argument(
             '-b', '--bind',
             metavar='{HOST:}PORT',
@@ -44,12 +44,8 @@ class RunServerLauncher(Launcher):
             return 0
 
     def start_server(self):
-        bind = self.args.bind if self.args.bind else settings.server.bind
-        host, port = bind.split(':') if ':' in bind else ('', bind)
-
         loop = asyncio.get_event_loop()
-        # Each client connection will create a new protocol instance
-        coro = loop.create_server(EasyQProtocol, host, port)
+        coro = easyq.create_server(loop, self.args.bind)
         server = loop.run_until_complete(coro)
 
         # Serve requests until Ctrl+C is pressed
@@ -61,7 +57,7 @@ class RunServerLauncher(Launcher):
             print('CTRL+C pressed')
         finally:
             # Close the server
-            serverclose()
+            server.close()
             loop.run_until_complete(server.wait_closed())
             loop.close()
 
@@ -77,7 +73,6 @@ class ServerLauncher(Launcher, RequireSubCommand):
         )
 
         server_subparsers = parser.add_subparsers(dest='server_command')
-        RunServerLauncher.register(server_subparsers)
+        StartServerLauncher.register(server_subparsers)
         return parser
-
 

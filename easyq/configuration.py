@@ -9,6 +9,9 @@ DEFAULT_ADDRESS = 'localhost:1085'
 BUILTIN_CONFIGURATION = f'''
 server:
   bind: {DEFAULT_ADDRESS}
+  authentication:
+    method: trust
+
 
 '''
 

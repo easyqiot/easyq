@@ -1,15 +1,10 @@
 import asyncio
 
 
-class EasyQProtocol(asyncio.Protocol):
-    """
-    State machine:
-
-        start -> connection_made() [-> data_received() *] [-> eof_received() ?] -> \
-            connection_lost() -> end
-
-    """
+class EasyQServerProtocol(asyncio.Protocol):
     transport = None
+    authenticator = None
+    identity = None
 
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
@@ -21,6 +16,7 @@ class EasyQProtocol(asyncio.Protocol):
 
     def data_received(self, data):
         message = data.decode()
+
         print('Data received: {!r}'.format(message))
 
         print('Send: {!r}'.format(message))
@@ -31,3 +27,8 @@ class EasyQProtocol(asyncio.Protocol):
         print('Close the client socket')
         self.transport.close()
 
+
+class EasyQClientProtocol(asyncio.Protocol):
+
+    def connection_made(self, transport):
+        pass

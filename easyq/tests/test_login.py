@@ -6,9 +6,10 @@ from easyq.tests.helpers import EasyQTestServer, TestCase
 
 class LoginTestCase(TestCase):
     async def test_trust(self):
-        async with self.server() as bind:
-            print(bind)
-            await asyncio.sleep(1)
+        async with self.server() as connect:
+            connection = connect()
+            connection.send(b'LOGIN test')
+            self.assertEqual(b'LOGIN test', connection.receive())
 
         #async with EasyQTestServer
 

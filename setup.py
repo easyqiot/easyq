@@ -28,7 +28,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'easyq = easyq:main'
+            'easyq = easyq.cli:main'
         ]
     },
     test_suite='easyq.tests',
