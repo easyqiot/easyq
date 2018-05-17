@@ -1,7 +1,7 @@
 import asyncio
 
 from .configuration import settings, configure
-from .protocols import server_handler
+from .protocols import server_handler, Connection, ServerConnection, ClientConnection
 from .authentication import initialize
 
 

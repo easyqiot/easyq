@@ -7,25 +7,11 @@ import easyq
 
 class TestCase(AsyncTestCase):
 
-    @classmethod
-    def server(cls):
-        return EasyQTestServer()
+    def get_event_loop(self):
+        return asyncio.get_event_loop()
 
-
-class Connection:
-    def __init__(self, reader, writer):
-        self.reader = reader
-        self.writer = writer
-
-    def send(self, data):
-        self.writer.write(b'%s\n' % data)
-
-    async def receive(self):
-        line = await self.reader.readuntil()
-        return line.rstrip()
-
-    def close(self):
-        self.writer.write_eof()
+    def server(self, options=None):
+        return EasyQTestServer(self.get_event_loop(), options)
 
 
 class EasyQTestServer:
@@ -41,7 +27,7 @@ class EasyQTestServer:
         host, port = self.server.sockets[0].getsockname()
         async def connector():
             reader, writer = await asyncio.open_connection(host, port, loop=self.loop)
-            connection = Connection(reader, writer)
+            connection = easyq.ClientConnection(reader, writer)
             self.connections.append(connection)
             return connection
         return connector
