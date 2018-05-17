@@ -1,14 +1,18 @@
 import asyncio
 
-from .configuration import settings
-from .protocols import EasyQServerProtocol
+from .configuration import settings, configure
+from .protocols import server_handler
 from .authentication import initialize
 
 
 __version__ = '0.1.0a1'
+__all__ = [
+    'configure',
+    'create_server',
+]
 
 
-def create_server(loop=None, bind=None):
+def create_server(bind=None, loop=None):
     loop = loop or asyncio.get_event_loop()
 
     # Host and Port to listen
@@ -19,6 +23,5 @@ def create_server(loop=None, bind=None):
     authentication.initialize()
 
     # Create the server coroutine
-    return loop.create_server(EasyQServerProtocol, host, port)
-
+    return asyncio.start_server(server_handler, host, port, loop=loop)
 

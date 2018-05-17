@@ -1,34 +1,17 @@
 import asyncio
 
 
-class EasyQServerProtocol(asyncio.Protocol):
-    transport = None
-    authenticator = None
-    identity = None
+async def server_handler(reader, writer):
+    while True:
+        try:
+            chunk = await reader.readuntil(b'\n')
+            writer.write(chunk)
+        except asyncio.IncompleteReadError:
+            writer.close()
+            break
+        except asyncio.LimitOverrunError:
+            # If the data cannot be read because of over limit, a LimitOverrunError exception will
+            # be raised, and the data will be left in the internal buffer, so it can be read
+            # again.
+            pass
 
-    def connection_made(self, transport):
-        peername = transport.get_extra_info('peername')
-        print('Connection from {}'.format(peername))
-        self.transport = transport
-
-    def connection_lost(self, exc):
-        print(f'Connection closed: {self.transport.get_extra_info("peername")}')
-
-    def data_received(self, data):
-        message = data.decode()
-
-        print('Data received: {!r}'.format(message))
-
-        print('Send: {!r}'.format(message))
-        self.transport.write(data)
-
-    def eof_received(self):
-        print(f'EOF received on {self.transport.get_extra_info("peername")}')
-        print('Close the client socket')
-        self.transport.close()
-
-
-class EasyQClientProtocol(asyncio.Protocol):
-
-    def connection_made(self, transport):
-        pass

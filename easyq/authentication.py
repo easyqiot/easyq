@@ -22,3 +22,6 @@ def initialize():
     except KeyError:
         raise ValueError(f'Invalid value for authentication method: {method}')
 
+def authenticate(credentials):
+    authenticator.authenticate(credentials)
+

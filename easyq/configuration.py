@@ -9,6 +9,9 @@ DEFAULT_ADDRESS = 'localhost:1085'
 BUILTIN_CONFIGURATION = f'''
 server:
   bind: {DEFAULT_ADDRESS}
+
+  read_limit: 4096
+
   authentication:
     method: trust
 
@@ -16,7 +19,7 @@ server:
 '''
 
 
-def configure(*args, **kwargs):
+def configure(init_value=None, files=None):
     """ Load configurations
 
     .. seealso:: `pymlconf Documentations <https://github.com/pylover/pymlconf#documentation>`_
@@ -25,9 +28,9 @@ def configure(*args, **kwargs):
     :param kwargs: keyword arguments pass into ``pymlconf.DeferredConfigManager.load``
     """
     settings.load(
-        *args,
+        init_value=init_value,
+        files=files,
         builtin=BUILTIN_CONFIGURATION,
         missing_file_behavior=pymlconf.IGNORE,
-        **kwargs
     )
 

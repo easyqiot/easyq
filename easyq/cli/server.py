@@ -15,7 +15,7 @@ class StartServerLauncher(Launcher):
 
     @classmethod
     def create_parser(cls, subparsers):
-        parser = subparsers.add_parser('strat', help='Starts a server on given host and port')
+        parser = subparsers.add_parser('start', help='Starts a server on given host and port')
         parser.add_argument(
             '-b', '--bind',
             metavar='{HOST:}PORT',
@@ -45,7 +45,7 @@ class StartServerLauncher(Launcher):
 
     def start_server(self):
         loop = asyncio.get_event_loop()
-        coro = easyq.create_server(loop, self.args.bind)
+        coro = easyq.create_server(bind=self.args.bind, loop=loop)
         server = loop.run_until_complete(coro)
 
         # Serve requests until Ctrl+C is pressed
