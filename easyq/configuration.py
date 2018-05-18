@@ -7,14 +7,15 @@ settings = pymlconf.DeferredConfigManager()
 DEFAULT_ADDRESS = 'localhost:1085'
 
 BUILTIN_CONFIGURATION = f'''
-server:
-  bind: {DEFAULT_ADDRESS}
+bind: {DEFAULT_ADDRESS}
 
-  read_limit: 4096
+read_limit: 4096
 
-  authentication:
-    method: trust
+authentication:
+  method: trust
 
+logging:
+  level: INFO
 
 '''
 

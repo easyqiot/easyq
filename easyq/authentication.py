@@ -20,7 +20,7 @@ authenticator = None
 
 def initialize():
     global authenticator
-    configuration = settings.server.authentication
+    configuration = settings.authentication
     method = configuration.method
     try:
         authenticator = {'trust': TrustAuthenticator}[method](configuration)
