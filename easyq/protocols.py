@@ -2,6 +2,16 @@ import asyncio
 
 from .authentication import authenticate
 
+"""
+-> LOGIN token
+<- HI user1
+
+-> PUSH 'message' INTO queue1 [ID 122]
+-> PULL FROM queue1
+-> IGNORE queue1
+<- MESSAGE FROM queue1 [ID 122]
+<- MESSAGE 122 IS DELIVERED TO user1
+"""
 
 class Connection:
     session_id = None
@@ -11,10 +21,11 @@ class Connection:
         self.writer = writer
 
     async def send(self, data):
-        self.writer.write(b'%s\n' % data)
+        self.writer.write(data)
+        self.writer.write(b'\n')
         await self.writer.drain()
 
-    async def receive(self):
+    async def readline(self):
         while True:
             try:
                 line = await self.reader.readuntil()
@@ -36,7 +47,7 @@ class ClientConnection(Connection):
 class ServerConnection(Connection):
 
     async def login(self):
-        login = await self.receive()
+        login = await self.readline()
         session_id = await authenticate(login)
         if session_id is None:
             await self.send(b'Authentication failed')
@@ -58,7 +69,7 @@ class ServerConnection(Connection):
 
             # Reading commands
             while True:
-                chunk = await session.receive()
+                chunk = await session.readline()
                 await session.send(chunk)
 
         except asyncio.IncompleteReadError:

@@ -13,9 +13,9 @@ class LoginTestCase(TestCase):
         '''
         async with self.server(options) as connect:
             connection = await connect()
-            await connection.send(b'LOGIN test')
-            session_id = await connection.receive()
-            self.assertEqual(b'test', session_id)
+            await connection.send(b'LOGIN testuser')
+            session_id = await connection.readline()
+            self.assertEqual(b'testuser', session_id)
 
 
 if __name__ == '__main__':
