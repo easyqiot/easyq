@@ -17,6 +17,7 @@ class ClientProtocol(asyncio.Protocol):
         self.logged_in = asyncio.Future()
 
     def connection_made(self, transport):
+        self.transport = transport
         transport.write(b'LOGIN ' + self.login.encode() + b'\n')
 
     def data_received(self, data):

@@ -95,7 +95,7 @@ class ServerProtocol(asyncio.Protocol):
         logger.info(
             'Login failed for {self.peername} with credentials: {credentials}, Closing socket.'
         )
-        self.transport.write(b'Login failed')
+        self.transport.write(b'LOGIN FAILED\n')
         self.transport.close()
 
     async def process_command(self, command):

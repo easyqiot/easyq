@@ -13,6 +13,8 @@ class BaseAuthenticator:
 class TrustAuthenticator(BaseAuthenticator):
 
     async def authenticate(self, name):
+        if b':' in name:
+            return None
         return name.decode()
 
 
