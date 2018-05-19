@@ -7,17 +7,15 @@ from easyq.tests.helpers import EasyQTestServer, TestCase
 class LoginTestCase(TestCase):
     async def test_trust(self):
         options = '''
-        authentication:
-          method: trust
+            authentication:
+              method: trust
 
-        logging:
-          level: warning
+            logging:
+              level: debug
         '''
         async with self.server(options) as connect:
-            connection = await connect()
-            await connection.send(b'LOGIN testuser')
-            session_id = await connection.readline()
-            self.assertEqual(b'testuser', session_id)
+            client = await connect('testuser')
+            self.assertEqual('testuser', client.identity)
 
 
 if __name__ == '__main__':

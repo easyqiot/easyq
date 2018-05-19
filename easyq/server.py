@@ -1,7 +1,9 @@
 import asyncio
 
-from .authentication import authenticate
+from .configuration import settings, configure
 from .logging import get_logger
+from .constants import LINE_ENDING
+from .authentication import authenticate, initialize as initialize_authentication
 
 """
 -> LOGIN token
@@ -20,7 +22,6 @@ from .logging import get_logger
 
 logger = get_logger('PROTO')
 
-LINE_ENDING = b'\n'
 
 class ServerProtocol(asyncio.Protocol):
     identity = None
@@ -87,7 +88,7 @@ class ServerProtocol(asyncio.Protocol):
             return
 
         logger.info(f'Login success: {self.identity} from {self.peername}')
-        self.transport.write(self.identity.encode() + b'\n')
+        self.transport.write(b'SESSION ID: ' + self.identity.encode() + b'\n')
         self.transport.resume_reading()
 
     async def login_failed(self, credentials):
@@ -101,4 +102,18 @@ class ServerProtocol(asyncio.Protocol):
         logger.debug(f'Processing Command: {command.decode()} by {self.identity}')
         self.transport.write(command)
         self.transport.write(LINE_ENDING)
+
+
+async def create_server(bind=None, loop=None):
+    loop = loop or asyncio.get_event_loop()
+
+    # Host and Port to listen
+    bind = bind or settings.bind
+    host, port = bind.split(':') if ':' in bind else ('', bind)
+
+    # Configuring the authenticator
+    initialize_authentication()
+
+    # Create the server coroutine
+    return await loop.create_server(ServerProtocol, host, port)
 

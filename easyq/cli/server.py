@@ -4,8 +4,8 @@ from os import chdir
 from os.path import relpath
 
 import yaml
-import easyq
-from ..configuration import configure, DEFAULT_ADDRESS
+from easyq.server import create_server, configure
+from ..configuration import DEFAULT_ADDRESS
 from .base import Launcher, RequireSubCommand
 
 
@@ -71,7 +71,7 @@ class StartServerLauncher(Launcher):
 
     def start_server(self):
         loop = asyncio.get_event_loop()
-        coro = easyq.create_server(bind=self.args.bind, loop=loop)
+        coro = create_server(bind=self.args.bind, loop=loop)
         server = loop.run_until_complete(coro)
 
         # Serve requests until Ctrl+C is pressed

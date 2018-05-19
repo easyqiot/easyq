@@ -1,8 +1,10 @@
 import asyncio
+import functools
 
 from aiounittest import AsyncTestCase
 
-import easyq
+from easyq.server import create_server, configure
+from easyq.client import connect
 
 
 class TestCase(AsyncTestCase):
@@ -47,17 +49,12 @@ class EasyQTestServer:
     def __init__(self, loop=None, options=None):
         self.loop = loop or asyncio.get_event_loop()
         self.connections = []
-        easyq.configure(init_value=options)
+        configure(init_value=options)
 
     async def __aenter__(self):
-        self.server = await easyq.create_server(bind='localhost:0')
+        self.server = await create_server(bind='localhost:0')
         host, port = self.server.sockets[0].getsockname()
-        async def connector():
-            reader, writer = await asyncio.open_connection(host, port, loop=self.loop)
-            connection = ClientConnection(reader, writer)
-            self.connections.append(connection)
-            return connection
-        return connector
+        return functools.partial(connect, host=host, port=port, loop=self.loop)
 
     async def __aexit__(self, exc_type, exc, tb):
         for c in self.connections:
