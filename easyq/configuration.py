@@ -15,7 +15,7 @@ authentication:
   method: trust
 
 logging:
-  level: DEBUG
+  level: debug
 
 '''
 
@@ -34,4 +34,6 @@ def configure(init_value=None, files=None):
         builtin=BUILTIN_CONFIGURATION,
         missing_file_behavior=pymlconf.IGNORE,
     )
+    return settings
+
 

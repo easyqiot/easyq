@@ -33,6 +33,13 @@ class ServerProtocol(asyncio.Protocol):
         logger.info(f'Connection from {self.peername}')
         self.transport = transport
 
+    def connection_lost(self, exc):
+        logger.info(f'Connection lost: {self.peername}')
+
+    def eof_received(self):
+        logger.debug('EOF Received: {self.peername}')
+        self.transport.close()
+
     def data_received(self, data):
         logger.debug(f'Data received: {data.decode().strip()}')
         if self.chunk:
@@ -82,7 +89,7 @@ class ServerProtocol(asyncio.Protocol):
             await self.login_failed(credentials)
             return
 
-        logger.info(f'Login success: {self.peername}')
+        logger.info(f'Login success: {self.identity} from {self.peername}')
         logger.debug(f'Resume reading from socket: {self.peername}')
         self.transport.resume_reading()
 
