@@ -36,4 +36,3 @@ def configure(init_value=None, files=None):
     )
     return settings
 
-

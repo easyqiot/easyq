@@ -7,9 +7,11 @@ from easyq.tests.helpers import EasyQTestServer, TestCase
 class LoginTestCase(TestCase):
     async def test_trust(self):
         options = '''
-        server:
-          authentication:
-            method: trust
+        authentication:
+          method: trust
+
+        logging:
+          level: warning
         '''
         async with self.server(options) as connect:
             connection = await connect()

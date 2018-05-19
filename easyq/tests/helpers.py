@@ -14,6 +14,33 @@ class TestCase(AsyncTestCase):
         return EasyQTestServer(self.get_event_loop(), options)
 
 
+class ClientConnection:
+    session_id = None
+
+    def __init__(self, reader, writer):
+        self.reader = reader
+        self.writer = writer
+
+    async def send(self, data):
+        self.writer.write(data)
+        self.writer.write(b'\n')
+        await self.writer.drain()
+
+    async def readline(self):
+        while True:
+            try:
+                line = await self.reader.readuntil()
+                return line.rstrip()
+            except asyncio.LimitOverrunError:
+                # If the data cannot be read because of over limit, this error will be raised.
+                # and the data will be left in the internal buffer, so it can be read again.
+                continue
+
+    def close(self):
+        self.writer.write_eof()
+        self.writer.close()
+
+
 class EasyQTestServer:
     server = None
 
@@ -27,7 +54,7 @@ class EasyQTestServer:
         host, port = self.server.sockets[0].getsockname()
         async def connector():
             reader, writer = await asyncio.open_connection(host, port, loop=self.loop)
-            connection = easyq.ClientConnection(reader, writer)
+            connection = ClientConnection(reader, writer)
             self.connections.append(connection)
             return connection
         return connector

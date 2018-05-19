@@ -90,6 +90,7 @@ class ServerProtocol(asyncio.Protocol):
             return
 
         logger.info(f'Login success: {self.identity} from {self.peername}')
+        self.transport.write(self.identity.encode() + b'\n')
         logger.debug(f'Resume reading from socket: {self.peername}')
         self.transport.resume_reading()
 
