@@ -10,7 +10,7 @@ class ClientProtocol(asyncio.Protocol):
     chunk = None
 
     class Patterns:
-        session_id = re.compile('^SESSION\sID:\s(?P<sessionid>.+)$')
+        session_id = re.compile('^HI\s(?P<sessionid>.+)$')
 
     def __init__(self, login):
         self.login = login

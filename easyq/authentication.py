@@ -21,6 +21,7 @@ class TrustAuthenticator(BaseAuthenticator):
 authenticator = None
 logger = get_logger('AUTH')
 
+
 def initialize():
     global authenticator
     configuration = settings.authentication
