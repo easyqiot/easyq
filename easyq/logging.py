@@ -27,7 +27,7 @@ class Logger:
         if self.level >= level:
             print(
                 f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} '
-                f'{self._levels[level]} {self.name.upper()} {msg}'
+                f'{self._levels[level]} {self.name} {msg}'
             )
 
     def error(self, msg):

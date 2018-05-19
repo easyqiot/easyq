@@ -1,3 +1,4 @@
+from .logging import get_logger
 from .configuration import settings
 
 
@@ -16,12 +17,13 @@ class TrustAuthenticator(BaseAuthenticator):
 
 
 authenticator = None
-
+logger = get_logger('AUTH')
 
 def initialize():
     global authenticator
     configuration = settings.authentication
     method = configuration.method
+    logger.info(f'Method: {method}')
     try:
         authenticator = {'trust': TrustAuthenticator}[method](configuration)
     except KeyError:

@@ -18,7 +18,7 @@ from .logging import get_logger
 """
 
 
-logger = get_logger('Protocol')
+logger = get_logger('PROTO')
 
 LINE_ENDING = b'\n'
 
@@ -46,15 +46,12 @@ class ServerProtocol(asyncio.Protocol):
             data = self.chunk + data
 
         if self.identity is None:
-            logger.info(f'Not authenticated yet: {self.peername}')
-
             if LINE_ENDING not in data:
                 self.chunk = data
                 return
 
             credentials, self.chunk = data.split(LINE_ENDING, 1)
             # Suspending all other commands before authentication
-            logger.debug(f'Pause reading from socket: {self.peername}')
             self.transport.pause_reading()
 
             # Scheduling a login task, if everything went ok, then the resume_reading will be
@@ -91,7 +88,6 @@ class ServerProtocol(asyncio.Protocol):
 
         logger.info(f'Login success: {self.identity} from {self.peername}')
         self.transport.write(self.identity.encode() + b'\n')
-        logger.debug(f'Resume reading from socket: {self.peername}')
         self.transport.resume_reading()
 
     async def login_failed(self, credentials):
