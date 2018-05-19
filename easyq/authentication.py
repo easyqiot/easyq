@@ -12,7 +12,7 @@ class BaseAuthenticator:
 class TrustAuthenticator(BaseAuthenticator):
 
     async def authenticate(self, name):
-        return name
+        return name.decode()
 
 
 authenticator = None
@@ -27,9 +27,7 @@ def initialize():
     except KeyError:
         raise ValueError(f'Invalid value for authentication method: {method}')
 
+
 async def authenticate(credentials):
-    parts = credentials.split(b' ')
-    if parts[0].lower() != b'login':
-        return None
-    return await authenticator.authenticate(b' '.join(parts[1:]))
+    return await authenticator.authenticate(credentials)
 

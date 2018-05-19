@@ -1,7 +1,8 @@
 import asyncio
 
 
-class MyProto(asyncio.StreamReaderProtocol):
+class MyProto(asyncio.Protocol):
+    identity = False
 
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
@@ -9,9 +10,17 @@ class MyProto(asyncio.StreamReaderProtocol):
         self.transport = transport
 
     def data_received(self, data):
-        print(data)
+        if not self.identity:
+            self.transport.pause_reading()
+            asyncio.ensure_future(self.login(data.strip()))
+            return
+        print(b'%s: %s' % (self.identity, data))
         self.transport.write(data)
 
+    async def login(self, data):
+        await asyncio.sleep(15)
+        self.identity = data
+        self.transport.resume_reading()
 
 def main(loop):
     # Each client connection will create a new protocol instance

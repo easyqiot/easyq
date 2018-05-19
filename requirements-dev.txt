@@ -2,4 +2,5 @@ aiounittest
 nose
 coveralls
 coverage
+nose-pudb
 

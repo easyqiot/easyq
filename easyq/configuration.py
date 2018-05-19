@@ -15,7 +15,7 @@ authentication:
   method: trust
 
 logging:
-  level: INFO
+  level: DEBUG
 
 '''
 

@@ -2,6 +2,7 @@ from datetime import datetime
 import functools
 
 
+DEBUG = 4
 INFO = 3
 WARNING = 2
 ERROR = 1
@@ -9,6 +10,7 @@ ERROR = 1
 
 class Logger:
     _levels = {
+        DEBUG: 'DEBUG',
         INFO: 'INFO',
         WARNING: 'WARNING',
         ERROR: 'ERROR'
@@ -31,6 +33,9 @@ class Logger:
 
     def info(self, msg):
         self.log(INFO, msg)
+
+    def debug(self, msg):
+        self.log(DEBUG, msg)
 
 
 loggers = {}

@@ -20,29 +20,81 @@ from .logging import get_logger
 
 logger = get_logger('Protocol')
 
+LINE_ENDING = b'\n'
 
 class ServerProtocol(asyncio.Protocol):
     identity = None
-
-    def __init__(self):
-        self.chunk = b''
+    transport = None
+    chunk = None
+    peername = None
 
     def connection_made(self, transport):
-        peername = transport.get_extra_info('peername')
-        logger.info(f'Connection from {peername}')
+        self.peername = transport.get_extra_info('peername')
+        logger.info(f'Connection from {self.peername}')
         self.transport = transport
 
     def data_received(self, data):
-        logger.info(f'Data received: {data.decode().strip()}')
-        lines = data.split(b'\n')
-        lines[0] = self.chunk + lines[0]
+        logger.debug(f'Data received: {data.decode().strip()}')
+        if self.chunk:
+            data = self.chunk + data
 
         if self.identity is None:
-            self.login(lines[0])
+            logger.info(f'Not authenticated yet: {self.peername}')
 
-        commands += [l for l in lines if l.strip()]
-        for command in commands:
+            if LINE_ENDING not in data:
+                self.chunk = data
+                return
+
+            credentials, self.chunk = data.split(LINE_ENDING, 1)
+            # Suspending all other commands before authentication
+            logger.debug(f'Pause reading from socket: {self.peername}')
+            self.transport.pause_reading()
+
+            # Scheduling a login task, if everything went ok, then the resume_reading will be
+            # called in the future.
+            asyncio.ensure_future(self.login(credentials))
+            return
+
+        # Splitting the received data with \n and adding buffered chunk if available
+        lines = data.split(LINE_ENDING)
+
+        # Adding unterminated command into buffer (if available) to be completed with the next call
+        if not lines[-1].endswith(LINE_ENDING):
+            self.chunk = lines.pop()
+
+        # Exiting if there is no command to process
+        if not lines:
+            return
+
+        for command in lines:
+            command = command.strip()
             asyncio.ensure_future(self.process_command(command))
 
-        # self.transport.close()
+    async def login(self, credentials):
+        logger.info(f'Authenticating: {self.peername}')
+        if not credentials.lower().startswith(b'login '):
+            await self.login_failed(credentials)
+            return
+
+        credentials = credentials[6:]
+        self.identity = await authenticate(credentials)
+        if self.identity is None:
+            await self.login_failed(credentials)
+            return
+
+        logger.info(f'Login success: {self.peername}')
+        logger.debug(f'Resume reading from socket: {self.peername}')
+        self.transport.resume_reading()
+
+    async def login_failed(self, credentials):
+        logger.info(
+            'Login failed for {self.peername} with credentials: {credentials}, Closing socket.'
+        )
+        self.transport.write(b'Login failed')
+        self.transport.close()
+
+    async def process_command(self, command):
+        logger.debug(f'Processing Command: {command.decode()} by {self.identity}')
+        self.transport.write(command)
+        self.transport.write(LINE_ENDING)
 
