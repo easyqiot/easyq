@@ -12,7 +12,6 @@ from .authentication import authenticate, initialize as initialize_authenticatio
 -> PUSH 'message' INTO queue1 [ID 122]
 -> PULL FROM queue1
 -> IGNORE queue1
--> EXIT
 
 <- MESSAGE FROM queue1 [ID 122]
 <- MESSAGE 122 IS DELIVERED TO user1

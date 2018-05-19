@@ -10,9 +10,6 @@ class LoginTestCase(TestCase):
         options = '''
             authentication:
               method: trust
-
-            logging:
-              level: debug
         '''
         async with self.server(options) as connect:
             client = await connect('testuser')

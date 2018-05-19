@@ -20,7 +20,7 @@ logging:
 '''
 
 
-def configure(init_value=None, files=None):
+def configure(init_value=None, files=None, force=None):
     """ Load configurations
 
     .. seealso:: `pymlconf Documentations <https://github.com/pylover/pymlconf#documentation>`_
@@ -33,6 +33,7 @@ def configure(init_value=None, files=None):
         files=files,
         builtin=BUILTIN_CONFIGURATION,
         missing_file_behavior=pymlconf.IGNORE,
+        force=force
     )
     return settings
 

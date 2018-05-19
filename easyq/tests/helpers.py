@@ -49,7 +49,7 @@ class EasyQTestServer:
     def __init__(self, loop=None, options=None):
         self.loop = loop or asyncio.get_event_loop()
         self.connections = []
-        configure(init_value=options)
+        configure(init_value=options, force=True)
 
     async def __aenter__(self):
         self.server = await create_server(bind='localhost:0')
