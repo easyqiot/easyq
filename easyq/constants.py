@@ -1,2 +1,2 @@
-LINE_ENDING = b'\n'
+COMMAND_SEPARATOR = b';'
 

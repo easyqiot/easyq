@@ -1,8 +1,9 @@
+import re
 import asyncio
 
 from .configuration import settings, configure
 from .logging import get_logger
-from .constants import LINE_ENDING
+from .constants import COMMAND_SEPARATOR
 from .authentication import authenticate, initialize as initialize_authentication
 
 """
@@ -37,7 +38,7 @@ class ServerProtocol(asyncio.Protocol):
         logger.info(f'Connection lost: {self.peername}')
 
     def eof_received(self):
-        logger.debug('EOF Received: {self.peername}')
+        logger.debug(f'EOF Received: {self.peername}')
         self.transport.close()
 
     def data_received(self, data):
@@ -46,11 +47,11 @@ class ServerProtocol(asyncio.Protocol):
             data = self.chunk + data
 
         if self.identity is None:
-            if LINE_ENDING not in data:
+            if COMMAND_SEPARATOR not in data:
                 self.chunk = data
                 return
 
-            credentials, self.chunk = data.split(LINE_ENDING, 1)
+            credentials, self.chunk = data.split(COMMAND_SEPARATOR, 1)
             # Suspending all other commands before authentication
             self.transport.pause_reading()
 
@@ -60,10 +61,10 @@ class ServerProtocol(asyncio.Protocol):
             return
 
         # Splitting the received data with \n and adding buffered chunk if available
-        lines = data.split(LINE_ENDING)
+        lines = data.split(COMMAND_SEPARATOR)
 
         # Adding unterminated command into buffer (if available) to be completed with the next call
-        if not lines[-1].endswith(LINE_ENDING):
+        if not lines[-1].endswith(COMMAND_SEPARATOR):
             self.chunk = lines.pop()
 
         # Exiting if there is no command to process
@@ -76,31 +77,37 @@ class ServerProtocol(asyncio.Protocol):
 
     async def login(self, credentials):
         logger.info(f'Authenticating: {self.peername}')
-        if not credentials.lower().startswith(b'login '):
+        m = self.Patterns.login.match(credentials)
+        if m is None:
             await self.login_failed(credentials)
             return
 
-        credentials = credentials[6:]
+        credentials = m.groupdict()['credentials']
         self.identity = await authenticate(credentials)
         if self.identity is None:
             await self.login_failed(credentials)
             return
 
         logger.info(f'Login success: {self.identity} from {self.peername}')
-        self.transport.write(b'HI %s\n' %  self.identity.encode())
+        self.transport.write(b'HI %s;\n' %  self.identity.encode())
         self.transport.resume_reading()
 
     async def login_failed(self, credentials):
         logger.info(
-            'Login failed for {self.peername} with credentials: {credentials}, Closing socket.'
+            f'Login failed for {self.peername} with credentials: {credentials}, Closing socket.'
         )
         self.transport.write(b'LOGIN FAILED\n')
         self.transport.close()
 
     async def process_command(self, command):
         logger.debug(f'Processing Command: {command.decode()} by {self.identity}')
+        #if self.Patterns.push.match(co
         self.transport.write(command)
-        self.transport.write(LINE_ENDING)
+        self.transport.write(COMMAND_SEPARATOR)
+
+    class Patterns:
+        login = re.compile(b'^LOGIN (?P<credentials>.+)$', re.DOTALL)
+        push = re.compile(b'^PUSH (?P<msg>.+) INTO (?P<queue>[a-zA-Z\._:-]+)$', re.DOTALL)
 
 
 async def create_server(bind=None, loop=None):

@@ -2,7 +2,7 @@
 import asyncio
 import re
 
-from .constants import LINE_ENDING
+from .constants import COMMAND_SEPARATOR
 
 
 class ClientProtocol(asyncio.Protocol):
@@ -18,17 +18,17 @@ class ClientProtocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         self.transport = transport
-        transport.write(b'LOGIN ' + self.login.encode() + b'\n')
+        transport.write(b'LOGIN ' + self.login.encode() + b';\n')
 
     def data_received(self, data):
         if self.chunk:
             data = self.chunk + data
 
          # Splitting the received data with \n and adding buffered chunk if available
-        lines = data.split(LINE_ENDING)
+        lines = data.split(COMMAND_SEPARATOR)
 
         # Adding unterminated line into buffer (if available) to be completed with the next call
-        if not lines[-1].endswith(LINE_ENDING):
+        if not lines[-1].endswith(COMMAND_SEPARATOR):
             self.chunk = lines.pop()
 
         # Exiting if there is no line to process
@@ -53,9 +53,14 @@ class ClientProtocol(asyncio.Protocol):
 
     def connection_lost(self, exc):
         print('The server closed the connection')
+        self.logged_in.set_result(False)
 
     async def process_response(self, data):
         print(b'Data from server: ' + data)
+
+    async def push(self, queue, message):
+        raise NotImplementedError()
+
 
 
 class EasyQClientError(Exception):
