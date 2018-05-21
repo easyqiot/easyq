@@ -34,10 +34,10 @@ class PushTestCase(TestCase):
         for t in blacklist:
             self.assertIsNone(ServerProtocol.Patterns.push.match(t))
 
-#    async def test_push(self):
-#       async with self.server() as connect:
-#            client = await connect('testuser')
-#            await client.push('q1', 'Hello')
+    async def test_push(self):
+       async with self.server() as connect:
+            client = await connect('testuser')
+            await client.push(b'q1', b'Hello')
 
 
 if __name__ == '__main__':

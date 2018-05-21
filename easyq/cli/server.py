@@ -4,8 +4,8 @@ from os import chdir
 from os.path import relpath
 
 import yaml
-from easyq.server import create_server, configure
-from ..configuration import DEFAULT_ADDRESS
+from easyq.server import create_server
+from ..configuration import DEFAULT_ADDRESS, configure
 from .base import Launcher, RequireSubCommand
 
 

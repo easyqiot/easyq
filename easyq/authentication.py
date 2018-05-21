@@ -1,4 +1,4 @@
-from .logging import get_logger
+from .logging import getlogger
 from .configuration import settings
 
 
@@ -19,7 +19,7 @@ class TrustAuthenticator(BaseAuthenticator):
 
 
 authenticator = None
-logger = get_logger('AUTH')
+logger = getlogger('AUTH')
 
 
 def initialize():

@@ -58,7 +58,7 @@ class LoggerProxy(Logger):
 loggers = {}
 
 
-def get_logger(name):
+def getlogger(name):
     if name not in loggers:
         loggers[name] = LoggerProxy(name)
 

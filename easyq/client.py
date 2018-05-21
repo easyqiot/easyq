@@ -59,8 +59,7 @@ class ClientProtocol(asyncio.Protocol):
         print(b'Data from server: ' + data)
 
     async def push(self, queue, message):
-        raise NotImplementedError()
-
+        self.transport.write(b'PUSH %s INTO %s' % (message, queue))
 
 
 class EasyQClientError(Exception):

@@ -3,7 +3,8 @@ import functools
 
 from aiounittest import AsyncTestCase
 
-from easyq.server import create_server, configure
+from easyq.server import create_server
+from easyq.configuration import configure
 from easyq.client import connect
 
 
