@@ -15,6 +15,7 @@ class PushTestCase(TestCase):
             (b'PUSH Hello\ndear INTO myq', b'Hello\ndear', b'myq'),
             (b'PUSH Hello dear INTO bad INTO myq', b'Hello dear INTO bad', b'myq'),
             (b'PUSH Hello INTO myq:a.b_c', b'Hello', b'myq:a.b_c'),
+            (b'push hello into myq:a.b_c', b'hello', b'myq:a.b_c'),
         ]
 
         for command, expected_message, expected_queue in whitelist:

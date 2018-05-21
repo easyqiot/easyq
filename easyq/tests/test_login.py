@@ -11,6 +11,7 @@ class LoginTestCase(TestCase):
         whitelist = [
             (b'LOGIN user', b'user'),
             (b'LOGIN user name', b'user name'),
+            (b'login user name', b'user name'),
         ]
 
         for command, expected_credentials in whitelist:

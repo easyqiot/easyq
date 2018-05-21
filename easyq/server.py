@@ -106,8 +106,9 @@ class ServerProtocol(asyncio.Protocol):
         self.transport.write(COMMAND_SEPARATOR)
 
     class Patterns:
-        login = re.compile(b'^LOGIN (?P<credentials>.+)$', re.DOTALL)
-        push = re.compile(b'^PUSH (?P<msg>.+) INTO (?P<queue>[a-zA-Z\._:-]+)$', re.DOTALL)
+        flags = re.DOTALL + re.IGNORECASE
+        login = re.compile(b'^LOGIN (?P<credentials>.+)$', flags)
+        push = re.compile(b'^PUSH (?P<msg>.+) INTO (?P<queue>[a-zA-Z\._:-]+)$', flags)
 
 
 async def create_server(bind=None, loop=None):
