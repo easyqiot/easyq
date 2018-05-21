@@ -5,12 +5,11 @@ import re
 from .authentication import authenticate, initialize as initialize_authentication
 from .configuration import settings
 from .logging import getlogger
-from .queuemanager import getqueue
+from .queuemanager import getqueue, dispatcher
 
 
 """
--> PUSH 'message' INTO queue1 [ID 122]
--> PULL FROM queue1
+> PULL FROM queue1
 -> IGNORE queue1
 
 <- MESSAGE FROM queue1 [ID 122]
@@ -28,6 +27,12 @@ class ServerProtocol(asyncio.Protocol):
     chunk = None
     peername = None
 
+    class Patterns:
+        regex = functools.partial(re.compile, flags=re.DOTALL + re.IGNORECASE)
+        login = regex(b'^LOGIN (?P<credentials>.+)$')
+        push = regex(b'^PUSH (?P<message>.+) INTO (?P<queue>[0-9a-zA-Z\._:-]+)$')
+        pull = regex(b'^PULL FROM (?P<queue>[0-9a-zA-Z\._:-]+)$')
+
     def connection_made(self, transport):
         self.peername = transport.get_extra_info('peername')
         logger.info(f'Connection from {self.peername}')
@@ -35,6 +40,7 @@ class ServerProtocol(asyncio.Protocol):
 
     def connection_lost(self, exc):
         logger.info(f'Connection lost: {self.peername}')
+        # FIXME: remove from all queues subscriptions
 
     def eof_received(self):
         logger.debug(f'EOF Received: {self.peername}')
@@ -98,34 +104,62 @@ class ServerProtocol(asyncio.Protocol):
         self.transport.write(b'LOGIN FAILED\n')
         self.transport.close()
 
-    async def push(self, message=None, queue=None):
-        await getqueue(queue).push(message)
+    async def push(self, message, queue):
+        try:
+            getqueue(queue).push(message)
+        except asyncio.QueueFull:
+            self.logger.warning(f'Queue is full: {self.name}')
+            self.transport.write(b'ERROR: QUEUE %s IS FULL;\n' % queue)
 
     async def process_command(self, command):
         logger.debug(f'Processing command: {command.decode()} by {self.identity}')
         m = self.Patterns.push.match(command)
-        if m:
-            await self.push(*m.groupdict())
-        else:
-            logger.debug(f'Invalid command: {command}')
-            self.transport.write(b'Invalid command: %s;\n' % command)
+        if m is not None:
+            return await self.push(**m.groupdict())
 
-    class Patterns:
-        regex = functools.partial(re.compile, flags=re.DOTALL + re.IGNORECASE)
-        login = regex(b'^LOGIN (?P<credentials>.+)$')
-        push = regex(b'^PUSH (?P<message>.+) INTO (?P<queue>[0-9a-zA-Z\._:-]+)$')
+        logger.debug(f'Invalid command: {command}')
+        self.transport.write(b'ERROR: Invalid command: %s;\n' % command)
+
+    async def dispatch(self, queue, message):
+        self.transport.write(b'MESSAGE %s FROM %s;\n' % (message, queue))
 
 
-async def create_server(bind=None, loop=None):
-    loop = loop or asyncio.get_event_loop()
+def create_dispatchers(workers=1, **kwargs):
+    logger.info(f'Creating {workers} dispatchers')
+    return asyncio.gather(*())
 
-    # Host and Port to listen
-    bind = bind or settings.bind
-    host, port = bind.split(':') if ':' in bind else ('', bind)
 
-    # Configuring the authenticator
-    initialize_authentication()
+class Server:
+    _server = None
+    def __init__(self, bind=None, loop=None):
+        self.loop = loop or asyncio.get_event_loop()
 
-    # Create the server coroutine
-    return await loop.create_server(ServerProtocol, host, port)
+        # Host and Port to listen
+        bind = bind or settings.bind
+        self.host, self.port = bind.split(':') if ':' in bind else ('', bind)
+
+        # Configuring the authenticator
+        initialize_authentication()
+
+        self.server_coro = self.loop.create_server(ServerProtocol, self.host, self.port)
+        self._dispatchers = []
+
+    async def start(self):
+        self._server = await self.server_coro
+
+        for i in range(settings.dispatchers):
+            self._dispatchers.append(
+                self.loop.create_task(dispatcher('WORKER %d' % i, **settings.dispatcher))
+            )
+
+    async def close(self):
+        for dispatcher in self._dispatchers:
+            dispatcher.cancel()
+        self._server.close()
+        await self._server.wait_closed()
+        await asyncio.wait(self._dispatchers)
+
+    @property
+    def address(self):
+        return self._server.sockets[0].getsockname()
 

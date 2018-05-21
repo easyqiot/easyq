@@ -1,4 +1,4 @@
-
+import functools
 import asyncio
 import re
 
@@ -8,11 +8,14 @@ class ClientProtocol(asyncio.Protocol):
     chunk = None
 
     class Patterns:
-        session_id = re.compile('^HI\s(?P<sessionid>.+)$')
+        regex = functools.partial(re.compile, flags=re.DOTALL)
+        session_id = regex('^HI\s(?P<sessionid>.+)$')
+        incomming = regex(b'^MESSAGE (?P<message>.+) FROM (?P<queue>[0-9a-zA-Z\._:-]+)$')
 
     def __init__(self, login):
         self.login = login
         self.logged_in = asyncio.Future()
+        self.handlers = {}
 
     def connection_made(self, transport):
         self.transport = transport
@@ -55,9 +58,30 @@ class ClientProtocol(asyncio.Protocol):
 
     async def process_response(self, data):
         print(b'Data from server: ' + data)
+        m = self.Patterns.message.match(data)
+        if m is not None:
+            return await self.dispatch(**m.groupdict())
+
+        return await self.error(data)
 
     async def push(self, queue, message):
         self.transport.write(b'PUSH %s INTO %s;\n' % (message, queue))
+
+    async def pull(self, queue, callback):
+        self.transport.write(b'PULL FROM %s;\n' % queue)
+        handlers = self.handlers.setdefault(queue, set())
+        handlers.add(callback)
+
+    async def dispatch(self, message, queue):
+        handlers = self.handlers.get(queue)
+        if handlers:
+            await asyncio.gather(
+                *(handler(message, queue) for handler in handlers),
+                return_exceptions=True
+            )
+
+    async def error(self, err):
+        print(f'Error from server: {err}')
 
 
 class EasyQClientError(Exception):

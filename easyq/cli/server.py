@@ -4,7 +4,7 @@ from os import chdir
 from os.path import relpath
 
 import yaml
-from easyq.server import create_server
+from easyq.server import Server
 from ..configuration import DEFAULT_ADDRESS, configure
 from .base import Launcher, RequireSubCommand
 
@@ -71,11 +71,11 @@ class StartServerLauncher(Launcher):
 
     def start_server(self):
         loop = asyncio.get_event_loop()
-        coro = create_server(bind=self.args.bind, loop=loop)
-        server = loop.run_until_complete(coro)
+        server = Server(bind=self.args.bind, loop=loop)
+        loop.run_until_complete(server.start())
 
         # Serve requests until Ctrl+C is pressed
-        host, port = server.sockets[0].getsockname()
+        host, port = server.address
         print(f'Serving on {host}:{port}')
         try:
             loop.run_forever()
@@ -83,8 +83,7 @@ class StartServerLauncher(Launcher):
             print('CTRL+C pressed')
         finally:
             # Close the server
-            server.close()
-            loop.run_until_complete(server.wait_closed())
+            loop.run_until_complete(server.close())
             loop.close()
 
 

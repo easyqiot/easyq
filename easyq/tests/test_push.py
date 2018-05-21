@@ -38,7 +38,7 @@ class PushTestCase(TestCase):
        async with self.server() as connect:
             client = await connect('testuser')
             await client.push(b'q1', b'Hello')
-            await asyncio.sleep(1)
+            await asyncio.sleep(.1)
 
 
 if __name__ == '__main__':

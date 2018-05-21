@@ -21,6 +21,11 @@ queues:
   default:
     maxsize: 100
 
+dispatchers: 1
+dispatcher:
+  messages_per_queue: 5
+  intervals: .5
+
 '''
 
 

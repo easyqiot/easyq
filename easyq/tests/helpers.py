@@ -3,7 +3,7 @@ import functools
 
 from aiounittest import AsyncTestCase
 
-from easyq.server import create_server
+from easyq.server import Server
 from easyq.configuration import configure
 from easyq.client import connect
 
@@ -53,13 +53,13 @@ class EasyQTestServer:
         configure(init_value=options, force=True)
 
     async def __aenter__(self):
-        self.server = await create_server(bind='localhost:0')
-        host, port = self.server.sockets[0].getsockname()
+        self.server = Server(bind='localhost:0')
+        await self.server.start()
+        host, port = self.server.address
         return functools.partial(connect, host=host, port=port, loop=self.loop)
 
     async def __aexit__(self, exc_type, exc, tb):
         for c in self.connections:
             c.close()
-        self.server.close()
-        await self.server.wait_closed()
+        await self.server.close()
 
