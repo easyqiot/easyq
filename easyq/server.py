@@ -4,15 +4,11 @@ import re
 
 from .authentication import authenticate, initialize as initialize_authentication
 from .configuration import settings
-from .constants import COMMAND_SEPARATOR
 from .logging import getlogger
 from .queuemanager import getqueue
 
 
 """
--> LOGIN token
-<- HI user1
-
 -> PUSH 'message' INTO queue1 [ID 122]
 -> PULL FROM queue1
 -> IGNORE queue1
@@ -50,11 +46,11 @@ class ServerProtocol(asyncio.Protocol):
             data = self.chunk + data
 
         if self.identity is None:
-            if COMMAND_SEPARATOR not in data:
+            if b';' not in data:
                 self.chunk = data
                 return
 
-            credentials, self.chunk = data.split(COMMAND_SEPARATOR, 1)
+            credentials, self.chunk = data.split(b';', 1)
             # Suspending all other commands before authentication
             self.transport.pause_reading()
 
@@ -64,10 +60,10 @@ class ServerProtocol(asyncio.Protocol):
             return
 
         # Splitting the received data with \n and adding buffered chunk if available
-        lines = data.split(COMMAND_SEPARATOR)
+        lines = data.split(b';')
 
         # Adding unterminated command into buffer (if available) to be completed with the next call
-        if not lines[-1].endswith(COMMAND_SEPARATOR):
+        if not lines[-1].endswith(b';'):
             self.chunk = lines.pop()
 
         # Exiting if there is no command to process
@@ -106,17 +102,18 @@ class ServerProtocol(asyncio.Protocol):
         await getqueue(queue).push(message)
 
     async def process_command(self, command):
-        logger.debug(f'Processing Command: {command.decode()} by {self.identity}')
-        m = self.Pattern.push.match(command)
+        logger.debug(f'Processing command: {command.decode()} by {self.identity}')
+        m = self.Patterns.push.match(command)
         if m:
             await self.push(*m.groupdict())
         else:
-            self.transport.write('Invalid command: %s;\n' % command)
+            logger.debug(f'Invalid command: {command}')
+            self.transport.write(b'Invalid command: %s;\n' % command)
 
     class Patterns:
         regex = functools.partial(re.compile, flags=re.DOTALL + re.IGNORECASE)
         login = regex(b'^LOGIN (?P<credentials>.+)$')
-        push = regex(b'^PUSH (?P<message>.+) INTO (?P<queue>[a-zA-Z\._:-]+)$')
+        push = regex(b'^PUSH (?P<message>.+) INTO (?P<queue>[0-9a-zA-Z\._:-]+)$')
 
 
 async def create_server(bind=None, loop=None):

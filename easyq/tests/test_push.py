@@ -9,7 +9,7 @@ from easyq.client import AuthenticationError
 class PushTestCase(TestCase):
     async def test_parser(self):
         whitelist = [
-            (b'PUSH Hello INTO myq', b'Hello', b'myq'),
+            (b'PUSH Hello INTO q1', b'Hello', b'q1'),
             (b'PUSH \'Hello\' INTO myq', b'\'Hello\'', b'myq'),
             (b'PUSH Hello dear INTO myq', b'Hello dear', b'myq'),
             (b'PUSH Hello\ndear INTO myq', b'Hello\ndear', b'myq'),
@@ -38,6 +38,7 @@ class PushTestCase(TestCase):
        async with self.server() as connect:
             client = await connect('testuser')
             await client.push(b'q1', b'Hello')
+            await asyncio.sleep(1)
 
 
 if __name__ == '__main__':

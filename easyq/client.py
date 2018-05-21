@@ -2,8 +2,6 @@
 import asyncio
 import re
 
-from .constants import COMMAND_SEPARATOR
-
 
 class ClientProtocol(asyncio.Protocol):
     identity = None
@@ -25,10 +23,10 @@ class ClientProtocol(asyncio.Protocol):
             data = self.chunk + data
 
          # Splitting the received data with \n and adding buffered chunk if available
-        lines = data.split(COMMAND_SEPARATOR)
+        lines = data.split(b';')
 
         # Adding unterminated line into buffer (if available) to be completed with the next call
-        if not lines[-1].endswith(COMMAND_SEPARATOR):
+        if not lines[-1].endswith(b';'):
             self.chunk = lines.pop()
 
         # Exiting if there is no line to process
@@ -59,7 +57,7 @@ class ClientProtocol(asyncio.Protocol):
         print(b'Data from server: ' + data)
 
     async def push(self, queue, message):
-        self.transport.write(b'PUSH %s INTO %s' % (message, queue))
+        self.transport.write(b'PUSH %s INTO %s;\n' % (message, queue))
 
 
 class EasyQClientError(Exception):

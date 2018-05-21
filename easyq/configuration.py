@@ -17,6 +17,10 @@ authentication:
 logging:
   level: debug
 
+queues:
+  default:
+    maxsize: 100
+
 '''
 
 

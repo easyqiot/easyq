@@ -1,2 +1,0 @@
-COMMAND_SEPARATOR = b';'
-

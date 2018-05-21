@@ -4,7 +4,7 @@ from .configuration import settings
 from .logging import getlogger
 
 
-logger = getlogger('Queue')
+logger = getlogger('QM')
 queues = {}
 
 
