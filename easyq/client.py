@@ -71,6 +71,14 @@ class ClientProtocol(asyncio.Protocol):
         handlers = self.handlers.setdefault(queue, set())
         handlers.add(callback)
 
+    async def ignore(self, queue, callback):
+        handlers = self.handlers.setdefault(queue, set())
+        if callback not in handlers:
+            raise ValueError(f'Invalid callback: {callback}')
+
+        handlers.remove(callback)
+        self.transport.write(b'IGNORE %s;\n' % queue)
+
     async def dispatch(self, message, queue):
         handlers = self.handlers.get(queue)
         if handlers:

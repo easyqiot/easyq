@@ -12,6 +12,10 @@ class AlreadySubscribedError(Exception):
     pass
 
 
+class NotSubscribedError(Exception):
+    pass
+
+
 class Queue:
 
     def __init__(self, name):
@@ -33,6 +37,9 @@ class Queue:
         self.subscriptors.append(protocol)
 
     def unsubscribe(self, protocol):
+        if protocol not in self.subscriptors:
+            raise NotSubscribedError()
+
         logger.info(f'Queue {self.name.decode()} was ignored by {protocol.identity}')
         self.subscriptors.remove(protocol)
 

@@ -57,19 +57,38 @@ class PullTestCase(TestCase):
             async def message_received(queue, message):
                 messages.append(message)
 
-            await client.pull(b'q1', message_received)
-            await client.push(b'q1', b'Hello')
-            await asyncio.sleep(1.1)
-            self.assertEqual([b'Hello'], messages)
-
-            # pulling twice!
             async def error(client_, error):
                 errors.append(error)
 
             client.onerror = error
+
+            await client.pull(b'q1', message_received)
+            await client.push(b'q1', b'Hello')
+            await asyncio.sleep(1.1)
+            self.assertEqual([b'Hello'], messages)
+            self.assertEqual([], errors)
+
+            # pulling twice!
             await client.pull(b'q1', message_received)
             await asyncio.sleep(1.1)
-            self.assertEqual([b'ERROR: QUEUE q1 IS ALREASY SUBSCRIBED'], errors)
+            self.assertEqual([b'ERROR: QUEUE q1 IS ALREADY SUBSCRIBED'], errors)
+
+            # Unsunscribing
+            await client.ignore(b'q1', message_received)
+            messages = []
+            errors = []
+            await client.push(b'q1', b'Hello')
+            await asyncio.sleep(1.1)
+            self.assertEqual([], messages)
+            self.assertEqual([], errors)
+
+            # Ignoring twice!
+            client.handlers[b'q1'] = [message_received]
+            await client.ignore(b'q1', message_received)
+            await asyncio.sleep(1.1)
+            self.assertEqual([b'ERROR: QUEUE q1 IS NOT SUBSCRIBED'], errors)
+
+
 
 
 if __name__ == '__main__':

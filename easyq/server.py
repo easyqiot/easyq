@@ -5,13 +5,7 @@ import re
 from .authentication import authenticate, initialize as initialize_authentication
 from .configuration import settings
 from .logging import getlogger
-from .queuemanager import getqueue, dispatcher, AlreadySubscribedError
-
-
-"""
--> IGNORE queue1
-
-"""
+from .queuemanager import getqueue, dispatcher, AlreadySubscribedError, NotSubscribedError
 
 
 logger = getlogger('PROTO')
@@ -28,6 +22,7 @@ class ServerProtocol(asyncio.Protocol):
         login = regex(b'^LOGIN (?P<credentials>.+)$')
         push = regex(b'^PUSH (?P<message>.+)(?:\s|\n)INTO (?P<queue>[0-9a-zA-Z\._:-]+)$')
         pull = regex(b'^PULL FROM (?P<queue>[0-9a-zA-Z\._:-]+)$')
+        ignore = regex(b'^IGNORE (?P<queue>[0-9a-zA-Z\._:-]+)$')
 
     def connection_made(self, transport):
         self.peername = transport.get_extra_info('peername')
@@ -111,7 +106,15 @@ class ServerProtocol(asyncio.Protocol):
         try:
             getqueue(queue).subscribe(self)
         except AlreadySubscribedError:
-            self.transport.write(b'ERROR: QUEUE %s IS ALREASY SUBSCRIBED;\n' % queue)
+            self.transport.write(b'ERROR: QUEUE %s IS ALREADY SUBSCRIBED;\n' % queue)
+
+    async def ignore(self, queue):
+        try:
+            getqueue(queue).unsubscribe(self)
+        except NotSubscribedError:
+            self.transport.write(b'ERROR: QUEUE %s IS NOT SUBSCRIBED;\n' % queue)
+
+
 
     async def process_command(self, command):
         logger.debug(f'Processing command: {command.decode()} by {self.identity}')
@@ -122,6 +125,10 @@ class ServerProtocol(asyncio.Protocol):
         m = self.Patterns.pull.match(command)
         if m is not None:
             return await self.pull(**m.groupdict())
+
+        m = self.Patterns.ignore.match(command)
+        if m is not None:
+            return await self.ignore(**m.groupdict())
 
         logger.debug(f'Invalid command: {command}')
         self.transport.write(b'ERROR: Invalid command: %s;\n' % command)
