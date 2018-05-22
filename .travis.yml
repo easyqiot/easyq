@@ -1,14 +1,28 @@
-
 language: python
-
-python: 3.6
-
+python:
+- 3.6
+- 3.7
+- nightly
+branches:
+  only:
+  - master
+  - develop
+  - nightly
+  - "/^v([1-9]\\d*!)?(0|[1-9]\\d*)(\\.(0|[1-9]\\d*))*((a|b|rc)(0|[1-9]\\d*))?(\\.post(0|[1-9]\\d*))?(\\.dev(0|[1-9]\\d*))?$/"
 before_install:
-  - pip install -U pip setuptools wheel
-  - pip install -r requirements-dev.txt
-
+- pip install -U pip setuptools wheel
+- pip install -r requirements-dev.txt
 install: pip install -e .
 script: coverage run --source easyq $(which nosetests)
-after_success: if [[ $TRAVIS_PYTHON_VERSION == '3.6' ]]; then travis_retry coveralls ; fi
-
-
+after_success: if [[ $TRAVIS_PYTHON_VERSION == '3.6' ]]; then travis_retry coveralls; fi
+deploy:
+  provider: pypi
+  skip_cleanup: true
+  user: Vahid.Mardani
+  password:
+    secure: PMyU5bIpYQW0s7qZSkXIOCYVZehMHOGz7wavMoeYSi2g5niy/egdK0s0ydjnIDCMuKSdvG5B53Mc75RZcVXo3Rz9Ut+BS1zcuvLHTY7EVWdB/SbOA4UpJSrQO92uzSA6UXCrw/6b7eGkAC4p1yJWU8ipo7w7e7lgVkFPlivehQx4lq4Fconlaz9CeQdOpfzF3fmDCmvxbX+jgEpYPpTLeWmheKwRmUN+8JH3uDhMEn5dIvfssSg3JCn638HJgE33ieJnzsA1KN7EmDt/VmaYXUexRyyiTwc8xvfkuDDc/DIVGc4quUnEHd4W//Na91RKqpqHe6DEu7hhDjmMYEddeLgtJRrYKUmlnDaF7SKh8e7zAE9/HxQJpC9RM2u145+UXAX2O/W03hnbFOW5xTO2pMg5KWeE1ZpUei1RY1LGtxeLuefMYDLBeNXaqtuZtKiYsxc1tUdxB2/6JhwuK9xJtyAMkosI0qdXvYrEBQrj7JZn2gaSUjPl5jukgIXI7L/lUftChJW2zuXq5stHGekQsueykMgy5w4N5KBZJQKeVrEOO4BBxJWUkTCG/DxuQc/jSedPwXVPD8HwgL2T7VQ0YYi+suH410IXwkXTKZQbyZ5j+8ojyBzz8emuxbPbfmTquTTMYDBR3ax/wkK0GM+BGLFpPGserWUpBn6rsllHLU0=
+  on:
+    tags: true
+    distributions: sdist bdist_wheel
+    repo: pylover/easyq
+    condition: "$TRAVIS_PYTHON_VERSION = 3.6"
