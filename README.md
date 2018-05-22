@@ -2,6 +2,7 @@
 
 A simple and plain text tcp message broker 
 
+[![PyPI](http://img.shields.io/pypi/v/easyq.svg)](https://pypi.python.org/pypi/easyq)
 [![Build Status](https://travis-ci.org/pylover/easyq.svg?branch=master)](https://travis-ci.org/pylover/easyq)
 [![Coverage Status](https://coveralls.io/repos/github/pylover/easyq/badge.svg?branch=master)](https://coveralls.io/github/pylover/easyq?branch=master)
 
