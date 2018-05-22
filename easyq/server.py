@@ -38,7 +38,7 @@ class ServerProtocol(asyncio.Protocol):
         self.transport.close()
 
     def data_received(self, data):
-        logger.debug(f'Data received: {data.decode().strip()}')
+        logger.debug(f'Data received: {data.strip()}')
         if self.chunk:
             data = self.chunk + data
 
@@ -114,10 +114,7 @@ class ServerProtocol(asyncio.Protocol):
         except NotSubscribedError:
             self.transport.write(b'ERROR: QUEUE %s IS NOT SUBSCRIBED;\n' % queue)
 
-
-
     async def process_command(self, command):
-        logger.debug(f'Processing command: {command.decode()} by {self.identity}')
         m = self.Patterns.push.match(command)
         if m is not None:
             return await self.push(**m.groupdict())

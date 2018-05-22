@@ -9,8 +9,6 @@ DEFAULT_ADDRESS = 'localhost:1085'
 BUILTIN_CONFIGURATION = f'''
 bind: {DEFAULT_ADDRESS}
 
-read_limit: 4096
-
 authentication:
   method: trust
 
