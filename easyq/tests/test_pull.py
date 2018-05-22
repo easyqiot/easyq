@@ -3,7 +3,8 @@ import asyncio
 
 from easyq.server import ServerProtocol
 from easyq.tests.helpers import EasyQTestServer, TestCase
-from easyq.client import AuthenticationError
+from easyq.client import AuthenticationError, ClientProtocol
+from easyq.queuemanager import AlreadySubscribedError
 
 
 class PullTestCase(TestCase):
@@ -32,7 +33,7 @@ class PullTestCase(TestCase):
             (b'MESSAGE Hello\nDear FROM q1', b'Hello\nDear', b'q1'),
         ]
 
-        for command, expected_massage, expected_queue in whitelist:
+        for command, expected_message, expected_queue in whitelist:
             m = ClientProtocol.Patterns.incomming.match(command)
             self.assertIsNotNone(m)
             message, queue = m.groups()
@@ -51,6 +52,7 @@ class PullTestCase(TestCase):
        async with self.server() as connect:
             client = await connect('testuser')
             messages = []
+            errors = []
 
             async def message_received(queue, message):
                 messages.append(message)
@@ -59,6 +61,15 @@ class PullTestCase(TestCase):
             await client.push(b'q1', b'Hello')
             await asyncio.sleep(1.1)
             self.assertEqual([b'Hello'], messages)
+
+            # pulling twice!
+            async def error(client_, error):
+                errors.append(error)
+
+            client.onerror = error
+            await client.pull(b'q1', message_received)
+            await asyncio.sleep(1.1)
+            self.assertEqual([b'ERROR: QUEUE q1 IS ALREASY SUBSCRIBED'], errors)
 
 
 if __name__ == '__main__':

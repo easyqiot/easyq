@@ -24,7 +24,7 @@ queues:
 dispatchers: 1
 dispatcher:
   messages_per_queue: 5
-  intervals: .5
+  intervals: .3
 
 '''
 

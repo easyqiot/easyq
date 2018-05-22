@@ -8,6 +8,10 @@ logger = getlogger('QM')
 queues = {}
 
 
+class AlreadySubscribedError(Exception):
+    pass
+
+
 class Queue:
 
     def __init__(self, name):
@@ -19,21 +23,31 @@ class Queue:
     def push(self, message):
         self._queue.put_nowait(message)
 
+    def get(self):
+        return self._queue.get_nowait()
+
     def subscribe(self, protocol):
+        if protocol in self.subscriptors:
+            raise AlreadySubscribedError()
+        logger.info(f'Queue {self.name.decode()} was subscribed by {protocol.identity}')
         self.subscriptors.append(protocol)
 
     def unsubscribe(self, protocol):
+        logger.info(f'Queue {self.name.decode()} was ignored by {protocol.identity}')
         self.subscriptors.remove(protocol)
 
     async def dispatch(self, message):
         for protocol in self.subscriptors:
-            await protocol.dispatch(queue, message)
+            logger.debug(
+                f'Dispatching message {message} from queue {self.name.decode()} to {protocol.identity}'
+            )
+            await protocol.dispatch(self.name, message)
 
 
 def getqueue(name) -> Queue:
     if name not in queues:
         queues[name] = Queue(name)
-        logger.info(f'Queue {name} just created.')
+        logger.info(f'Queue {name.decode()} just created.')
     return queues[name]
 
 
@@ -42,15 +56,17 @@ async def dispatcher(name, intervals=.5, messages_per_queue=5):
     cycle = 0
     try:
         while True:
-            logger.debug(f'Cycle: {cycle}')
-            for queue in queues:
+            if cycle % 100 == 0:
+                logger.debug(f'Cycle: {cycle}')
+            for queue in queues.values():
                 try:
-                    for i in range(message_per_queue):
-                        message = queue.get_nowait()
+                    for i in range(messages_per_queue):
+                        message = queue.get()
+                        logger.debug(f'Dispatching {message}')
                         await queue.dispatch(message)
 
-                except EmptyQueue:
-                    logger.info(f'Queue {queue.decode()} is empty')
+                except asyncio.QueueEmpty:
+                    pass
 
             cycle += 1
             await asyncio.sleep(intervals)

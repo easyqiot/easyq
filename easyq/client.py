@@ -6,6 +6,7 @@ import re
 class ClientProtocol(asyncio.Protocol):
     identity = None
     chunk = None
+    onerror = None
 
     class Patterns:
         regex = functools.partial(re.compile, flags=re.DOTALL)
@@ -53,12 +54,10 @@ class ClientProtocol(asyncio.Protocol):
             asyncio.ensure_future(self.process_response(response))
 
     def connection_lost(self, exc):
-        print('The server closed the connection')
         self.logged_in.set_result(False)
 
     async def process_response(self, data):
-        print(b'Data from server: ' + data)
-        m = self.Patterns.message.match(data)
+        m = self.Patterns.incomming.match(data)
         if m is not None:
             return await self.dispatch(**m.groupdict())
 
@@ -76,12 +75,13 @@ class ClientProtocol(asyncio.Protocol):
         handlers = self.handlers.get(queue)
         if handlers:
             await asyncio.gather(
-                *(handler(message, queue) for handler in handlers),
+                *(handler(queue, message) for handler in handlers),
                 return_exceptions=True
             )
 
     async def error(self, err):
-        print(f'Error from server: {err}')
+        if self.onerror:
+            await self.onerror(self, err)
 
 
 class EasyQClientError(Exception):

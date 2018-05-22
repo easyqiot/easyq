@@ -16,16 +16,20 @@ class PushTestCase(TestCase):
             (b'PUSH Hello dear INTO bad INTO myq', b'Hello dear INTO bad', b'myq'),
             (b'PUSH Hello INTO myq:a.b_c', b'Hello', b'myq:a.b_c'),
             (b'push hello into myq:a.b_c', b'hello', b'myq:a.b_c'),
+            (b'push hello\ninto q1', b'hello', b'q1'),
         ]
 
         for command, expected_message, expected_queue in whitelist:
-            m = ServerProtocol.Patterns.push.match(command)
-            if m is None:
+            try:
+                m = ServerProtocol.Patterns.push.match(command)
+                self.assertIsNotNone(m)
+                print(m.groups())
+                message, queue, = m.groups()
+                self.assertEqual(expected_queue, queue)
+                self.assertEqual(expected_message, message)
+            except AssertionError:
                 print(command)
-            self.assertIsNotNone(m)
-            message, queue = m.groups()
-            self.assertEqual(expected_queue, queue)
-            self.assertEqual(expected_message, message)
+                raise
 
         blacklist = [
             b'PUSH Hello INTO my\nq',

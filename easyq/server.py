@@ -5,15 +5,11 @@ import re
 from .authentication import authenticate, initialize as initialize_authentication
 from .configuration import settings
 from .logging import getlogger
-from .queuemanager import getqueue, dispatcher
+from .queuemanager import getqueue, dispatcher, AlreadySubscribedError
 
 
 """
-> PULL FROM queue1
 -> IGNORE queue1
-
-<- MESSAGE FROM queue1 [ID 122]
-<- MESSAGE 122 IS DELIVERED TO user1
 
 """
 
@@ -30,7 +26,7 @@ class ServerProtocol(asyncio.Protocol):
     class Patterns:
         regex = functools.partial(re.compile, flags=re.DOTALL + re.IGNORECASE)
         login = regex(b'^LOGIN (?P<credentials>.+)$')
-        push = regex(b'^PUSH (?P<message>.+) INTO (?P<queue>[0-9a-zA-Z\._:-]+)$')
+        push = regex(b'^PUSH (?P<message>.+)(?:\s|\n)INTO (?P<queue>[0-9a-zA-Z\._:-]+)$')
         pull = regex(b'^PULL FROM (?P<queue>[0-9a-zA-Z\._:-]+)$')
 
     def connection_made(self, transport):
@@ -62,7 +58,7 @@ class ServerProtocol(asyncio.Protocol):
 
             # Scheduling a login task, if everything went ok, then the resume_reading will be
             # called in the future.
-            asyncio.ensure_future(self.login(credentials))
+            asyncio.ensure_future(self.login(credentials.strip()))
             return
 
         # Splitting the received data with \n and adding buffered chunk if available
@@ -109,13 +105,23 @@ class ServerProtocol(asyncio.Protocol):
             getqueue(queue).push(message)
         except asyncio.QueueFull:
             self.logger.warning(f'Queue is full: {self.name}')
-            self.transport.write(b'ERROR: QUEUE %s IS FULL;\n' % queue)
+            self.transport.write(b'ERROR: QUEUE %s IS FULL;\n' % queue.decode())
+
+    async def pull(self, queue):
+        try:
+            getqueue(queue).subscribe(self)
+        except AlreadySubscribedError:
+            self.transport.write(b'ERROR: QUEUE %s IS ALREASY SUBSCRIBED;\n' % queue)
 
     async def process_command(self, command):
         logger.debug(f'Processing command: {command.decode()} by {self.identity}')
         m = self.Patterns.push.match(command)
         if m is not None:
             return await self.push(**m.groupdict())
+
+        m = self.Patterns.pull.match(command)
+        if m is not None:
+            return await self.pull(**m.groupdict())
 
         logger.debug(f'Invalid command: {command}')
         self.transport.write(b'ERROR: Invalid command: %s;\n' % command)
@@ -131,8 +137,11 @@ def create_dispatchers(workers=1, **kwargs):
 
 class Server:
     _server = None
+    _dispatchers_task = None
+
     def __init__(self, bind=None, loop=None):
         self.loop = loop or asyncio.get_event_loop()
+        self.logger = getlogger('SERVER')
 
         # Host and Port to listen
         bind = bind or settings.bind
@@ -141,23 +150,20 @@ class Server:
         # Configuring the authenticator
         initialize_authentication()
 
-        self.server_coro = self.loop.create_server(ServerProtocol, self.host, self.port)
-        self._dispatchers = []
-
     async def start(self):
-        self._server = await self.server_coro
-
-        for i in range(settings.dispatchers):
-            self._dispatchers.append(
-                self.loop.create_task(dispatcher('WORKER %d' % i, **settings.dispatcher))
-            )
+        self._server = await self.loop.create_server(ServerProtocol, self.host, self.port)
+        self._dispatchers_task = self.loop.create_task(asyncio.gather(
+            *(dispatcher('WORKER %d' % i, **settings.dispatcher)
+              for i in range(settings.dispatchers))
+        ))
 
     async def close(self):
-        for dispatcher in self._dispatchers:
-            dispatcher.cancel()
+        self.logger.info('Shutting down...')
+        self._dispatchers_task.cancel()
         self._server.close()
         await self._server.wait_closed()
-        await asyncio.wait(self._dispatchers)
+        while self._dispatchers_task.cancelled():
+            await asyncio.sleep(.2)
 
     @property
     def address(self):

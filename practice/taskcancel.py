@@ -7,6 +7,7 @@ async def worker(name):
     c = 0
     running = True
     try:
+        raise Exception('di dada doo da')
         while True:
             print(f'worker: {name} working cycle: {c}')
             await asyncio.sleep(1)

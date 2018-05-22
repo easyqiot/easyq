@@ -41,6 +41,9 @@ class LoginTestCase(TestCase):
             with self.assertRaises(AuthenticationError):
                 await connect('colon:not:allowed')
 
+            client = await connect('testuser\n')
+            self.assertEqual('testuser', client.identity)
+
 
 if __name__ == '__main__':
     unittest.main()
