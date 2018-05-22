@@ -51,13 +51,6 @@ class Queue:
             await protocol.dispatch(self.name, message)
 
 
-def getqueue(name) -> Queue:
-    if name not in queues:
-        queues[name] = Queue(name)
-        logger.info(f'Queue {name.decode()} just created.')
-    return queues[name]
-
-
 async def dispatcher(name, intervals=.5, messages_per_queue=5):
     logger = getlogger(name)
     cycle = 0
@@ -79,4 +72,27 @@ async def dispatcher(name, intervals=.5, messages_per_queue=5):
             await asyncio.sleep(intervals)
     except asyncio.CancelledError:
         logger.info(f'Terminating on cycle: {cycle}')
+
+
+def getqueue(name) -> Queue:
+    if name not in queues:
+        queues[name] = Queue(name)
+        logger.info(f'Queue {name.decode()} just created.')
+    return queues[name]
+
+
+def subscribe(name, protocol):
+    getqueue(name).subscribe(protocol)
+
+
+def unsubscribe(name, protocol):
+    getqueue(name).unsubscribe(protocol)
+
+
+def unsubscribe_all(protocol):
+    for queue in queues.values():
+        try:
+            queue.unsubscribe(protocol)
+        except NotSubscribedError:
+            pass
 

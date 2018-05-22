@@ -5,7 +5,8 @@ import re
 from .authentication import authenticate, initialize as initialize_authentication
 from .configuration import settings
 from .logging import getlogger
-from .queuemanager import getqueue, dispatcher, AlreadySubscribedError, NotSubscribedError
+from .queuemanager import getqueue, dispatcher, AlreadySubscribedError, NotSubscribedError, \
+    unsubscribe_all, subscribe, unsubscribe
 
 
 logger = getlogger('PROTO')
@@ -31,10 +32,10 @@ class ServerProtocol(asyncio.Protocol):
 
     def connection_lost(self, exc):
         logger.info(f'Connection lost: {self.peername}')
-        # FIXME: remove from all queues subscriptions
 
     def eof_received(self):
         logger.debug(f'EOF Received: {self.peername}')
+        unsubscribe_all(self)
         self.transport.close()
 
     def data_received(self, data):
@@ -104,13 +105,13 @@ class ServerProtocol(asyncio.Protocol):
 
     async def pull(self, queue):
         try:
-            getqueue(queue).subscribe(self)
+            subscribe(queue, self)
         except AlreadySubscribedError:
             self.transport.write(b'ERROR: QUEUE %s IS ALREADY SUBSCRIBED;\n' % queue)
 
     async def ignore(self, queue):
         try:
-            getqueue(queue).unsubscribe(self)
+            unsubscribe(queue, self)
         except NotSubscribedError:
             self.transport.write(b'ERROR: QUEUE %s IS NOT SUBSCRIBED;\n' % queue)
 
