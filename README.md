@@ -124,6 +124,14 @@ Start a server in another terminal to handle our connections.
 easyq server start
 ```
 
+A new shell to listen on queue: `q`:
+```bash
+echo "LOGIN Listener;PULL FROM q;" | nc localhost 1085
+```
+
+Watch here for messages you send in the next step.
+
+
 #### Netcat
 
 ```bash
