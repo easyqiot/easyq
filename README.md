@@ -200,3 +200,37 @@ if __name__ == '__main__':
     asyncio.get_event_loop().run_until_complete(main())
 ```
 
+
+## Systemd
+
+`/etc/systemd/system/easyq.service`
+
+```yaml
+[Unit]
+Description="EasyQ daemon"
+After=network.target
+
+[Service]
+User=eq
+ExecStart=/usr/local/bin/easyq server start --config-file /etc/easyq/easyq.yml
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=EasyQ
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`/etc/rsyslog.d/easyq.conf`
+
+```bash
+if $programname == 'EasyQ' then /path/to/log/file.log
+if $programname == 'EasyQ' then ~
+```
+
+```bash
+adduser --system eq
+systemctl daemon-reload
+systemctl enable easyq.service
+systemctl start easysq
+```

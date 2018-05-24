@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 
 from easyq.client import connect
 
@@ -8,11 +9,16 @@ async def message_received(queue, message):
 
 
 async def main():
-    client = await connect('Username', 'localhost', 1085)
+    client = await connect('ROBOT', '192.168.8.44', 1085)
     await client.pull(b'q', message_received)
-    await client.push(b'q', b'Hello')
-    await asyncio.sleep(2)
-    await client.ignore(b'q', message_received)
+    try:
+        while True:
+            now = datetime.now()
+            msg = 'Hello %s:%s' % (now.strftime('%H:%m:%s'), '#' * now.second)
+            await client.push(b'q', msg.encode())
+            await asyncio.sleep(1)
+    except KeyboardInterrupt:
+        await client.ignore(b'q', message_received)
 
 
 if __name__ == '__main__':

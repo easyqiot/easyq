@@ -88,6 +88,7 @@ class ServerProtocol(asyncio.Protocol):
         logger.info(f'Login success: {self.identity} from {self.peername}')
         self.transport.write(b'HI %s;\n' %  self.identity.encode())
         self.transport.resume_reading()
+        self.data_received(b'')
 
     async def login_failed(self, credentials):
         logger.info(
