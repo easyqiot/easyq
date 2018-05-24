@@ -14,7 +14,7 @@ async def main():
     try:
         while True:
             now = datetime.now()
-            msg = 'Hello %s:%s' % (now.strftime('%H:%m:%s'), '#' * now.second)
+            msg = 'Hello %s:%s' % (now.strftime('%H:%m:%s'), '#' * (now.second % 20))
             await client.push(b'q', msg.encode())
             await asyncio.sleep(1)
     except KeyboardInterrupt:

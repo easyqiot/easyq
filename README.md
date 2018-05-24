@@ -206,6 +206,7 @@ if __name__ == '__main__':
 `/etc/systemd/system/easyq.service`
 
 ```yaml
+
 [Unit]
 Description="EasyQ daemon"
 After=network.target
@@ -213,19 +214,11 @@ After=network.target
 [Service]
 User=eq
 ExecStart=/usr/local/bin/easyq server start --config-file /etc/easyq/easyq.yml
-StandardOutput=syslog
-StandardError=syslog
-SyslogIdentifier=EasyQ
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
-```
-
-`/etc/rsyslog.d/easyq.conf`
-
-```bash
-if $programname == 'EasyQ' then /path/to/log/file.log
-if $programname == 'EasyQ' then ~
 ```
 
 ```bash
