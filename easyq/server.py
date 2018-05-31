@@ -70,7 +70,8 @@ class ServerProtocol(asyncio.Protocol):
 
         for command in lines:
             command = command.strip()
-            asyncio.ensure_future(self.process_command(command))
+            if command:
+                asyncio.ensure_future(self.process_command(command))
 
     async def login(self, credentials):
         logger.info(f'Authenticating: {self.peername}')
@@ -88,7 +89,7 @@ class ServerProtocol(asyncio.Protocol):
         logger.info(f'Login success: {self.identity} from {self.peername}')
         self.transport.write(b'HI %s;\n' %  self.identity.encode())
         self.transport.resume_reading()
-        self.data_received(b'')
+        self.data_received(b';')
 
     async def login_failed(self, credentials):
         logger.info(
