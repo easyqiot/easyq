@@ -1,7 +1,7 @@
 import pymlconf
 
 
-settings = pymlconf.DeferredConfigManager()
+settings = pymlconf.DeferredRoot()
 
 
 DEFAULT_ADDRESS = 'localhost:1085'
@@ -27,7 +27,7 @@ dispatcher:
 '''
 
 
-def configure(init_value=None, files=None, force=None):
+def configure(init_value=None, filename=None, force=None):
     """ Load configurations
 
     .. seealso:: `pymlconf Documentations <https://github.com/pylover/pymlconf#documentation>`_
@@ -35,12 +35,16 @@ def configure(init_value=None, files=None, force=None):
     :param args: positional arguments pass into ``pymlconf.DeferredConfigManager.load``
     :param kwargs: keyword arguments pass into ``pymlconf.DeferredConfigManager.load``
     """
-    settings.load(
-        init_value=init_value,
-        files=files,
-        builtin=BUILTIN_CONFIGURATION,
-        missing_file_behavior=pymlconf.IGNORE,
+    settings.initialize(
+        BUILTIN_CONFIGURATION,
         force=force
     )
+
+    if init_value is not None:
+        settings.merge(init_value)
+
+    if filename is not None:
+        settings.load_file(filename)
+
     return settings
 

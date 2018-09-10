@@ -10,7 +10,7 @@ with open(os.path.join(os.path.dirname(__file__), 'easyq', '__init__.py')) as v_
 
 
 dependencies = [
-    'pymlconf',
+    'pymlconf >= 1',
     'argcomplete'
 ]
 
