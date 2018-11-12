@@ -45,6 +45,7 @@ class ServerProtocol(asyncio.Protocol):
 
         if self.identity is None:
             if b';' not in data:
+                data = data.rstrip(b'\x00')
                 self.chunk = data
                 return
 
