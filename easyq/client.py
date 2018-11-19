@@ -84,7 +84,7 @@ class ClientProtocol(asyncio.Protocol):
         if handlers:
             await asyncio.gather(
                 *(handler(queue, message) for handler in handlers),
-                return_exceptions=True
+                return_exceptions=False
             )
 
     async def error(self, err):
